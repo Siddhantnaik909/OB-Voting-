@@ -61,9 +61,8 @@ router.get('/excel', authenticateToken, async (req, res) => {
       'Operating System': vote.device_info?.os || 'Unknown',
       'Device': vote.device_info?.device || 'Unknown',
       'Student Name': vote.student_info?.name || '',
-      'Student ID': vote.student_info?.student_id || '',
-      'PRN Number': vote.student_info?.prn_number || '',
-      'Selected Option': vote.student_info?.selected_option || ''
+      'Seat Number': vote.student_info?.seat_number || '',
+      'PRN Number': vote.student_info?.prn_number || ''
     }));
     
     // Create workbook
@@ -84,9 +83,8 @@ router.get('/excel', authenticateToken, async (req, res) => {
       { wch: 20 },  // OS
       { wch: 15 },  // Device
       { wch: 20 },  // Student Name
-      { wch: 15 },  // Student ID
-      { wch: 15 },  // PRN Number
-      { wch: 20 }   // Selected Option
+      { wch: 15 },  // Seat Number
+      { wch: 15 }   // PRN Number
     ];
     ws['!cols'] = colWidths;
     
@@ -164,9 +162,8 @@ router.get('/csv', authenticateToken, async (req, res) => {
       'Browser': vote.device_info?.browser || 'Unknown',
       'OS': vote.device_info?.os || 'Unknown',
       'Student Name': vote.student_info?.name || '',
-      'Student ID': vote.student_info?.student_id || '',
-      'PRN Number': vote.student_info?.prn_number || '',
-      'Selected Option': vote.student_info?.selected_option || ''
+      'Seat Number': vote.student_info?.seat_number || '',
+      'PRN Number': vote.student_info?.prn_number || ''
     }));
     
     // Create workbook and convert to CSV

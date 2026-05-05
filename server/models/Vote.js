@@ -38,10 +38,9 @@ const voteSchema = new mongoose.Schema({
     index: true
   },
   student_info: {
-    student_id: String,
+    seat_number: String,
     name: String,
-    prn_number: String,
-    selected_option: String
+    prn_number: String
   }
 }, {
   timestamps: true

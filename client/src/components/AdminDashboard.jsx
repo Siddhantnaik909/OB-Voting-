@@ -94,7 +94,10 @@ function AdminDashboard({ onLogout }) {
         }
       })
 
-      if (!response.ok) throw new Error('Export failed')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Export failed');
+      }
 
       const blob = await response.blob()
       const downloadUrl = window.URL.createObjectURL(blob)

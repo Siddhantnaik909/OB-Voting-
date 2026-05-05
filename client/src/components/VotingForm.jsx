@@ -14,9 +14,8 @@ function VotingForm({ onVoteSubmitted }) {
   const [showStudentInfo, setShowStudentInfo] = useState(true)
   const [studentInfo, setStudentInfo] = useState({
     name: '',
-    student_id: '',
-    prn_number: '',
-    selected_option: ''
+    seat_number: '',
+    prn_number: ''
   })
 
   useEffect(() => {
@@ -55,8 +54,8 @@ function VotingForm({ onVoteSubmitted }) {
 
     try {
       // Validation for required fields
-      if (!studentInfo.name || !studentInfo.prn_number) {
-        setError('Please enter your Name and PRN Number to vote.')
+      if (!studentInfo.name || !studentInfo.prn_number || !studentInfo.seat_number) {
+        setError('Please enter your Name, PRN Number, and Seat Number to vote.')
         setIsSubmitting(false)
         return
       }
@@ -201,16 +200,17 @@ function VotingForm({ onVoteSubmitted }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Student ID
+                  Student Current Seat Number
                 </label>
                 <input
                   type="text"
-                  value={studentInfo.student_id}
-                  onChange={(e) => setStudentInfo({ ...studentInfo, student_id: e.target.value })}
+                  value={studentInfo.seat_number}
+                  onChange={(e) => setStudentInfo({ ...studentInfo, seat_number: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
                            bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                            focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Student ID"
+                  placeholder="Seat Number"
+                  required
                 />
               </div>
               <div>
@@ -228,20 +228,6 @@ function VotingForm({ onVoteSubmitted }) {
                   required
                 />
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Fill Option
-              </label>
-              <input
-                type="text"
-                value={studentInfo.selected_option}
-                onChange={(e) => setStudentInfo({ ...studentInfo, selected_option: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                         bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                         focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Enter option"
-              />
             </div>
           </div>
         )}
