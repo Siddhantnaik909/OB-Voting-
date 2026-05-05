@@ -153,6 +153,12 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       return acc;
     }, { YES: 0, NO: 0 });
     
+    // Get most recent 10 votes
+    const recentVotesList = await Vote.find({ subject_name: 'Organizational Behavior' })
+      .sort({ timestamp: -1 })
+      .limit(10)
+      .select('vote_id vote_type timestamp student_info ip_address');
+    
     res.json({
       total_votes: totalVotes,
       recent_votes: recentVotes,
@@ -162,6 +168,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       yes_percentage: totalVotes > 0 ? ((voteCounts.YES / totalVotes) * 100).toFixed(1) : 0,
       no_percentage: totalVotes > 0 ? ((voteCounts.NO / totalVotes) * 100).toFixed(1) : 0,
       browser_breakdown: browserStats,
+      recent_votes_list: recentVotesList,
       subject: 'Organizational Behavior',
       last_updated: new Date().toISOString()
     });
