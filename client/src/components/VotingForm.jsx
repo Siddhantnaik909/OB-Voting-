@@ -214,7 +214,13 @@ function VotingForm({ onVoteSubmitted }) {
           </span>
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Voted on: {new Date(previousVote?.timestamp).toLocaleString()}
+          Voted on: {previousVote?.timestamp ? new Date(previousVote.timestamp).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) : new Date().toLocaleString()}
         </p>
         
         <div className="mt-8 space-y-3">
