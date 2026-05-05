@@ -41,6 +41,8 @@ function AdminDashboard({ onLogout }) {
   const [seedLoading, setSeedLoading] = useState(false)
   const [isAddingStudent, setIsAddingStudent] = useState(false)
   const [newStudent, setNewStudent] = useState({ name: '', prn_number: '', seat_number: '', vote_type: 'YES' })
+  const [newAdmin, setNewAdmin] = useState({ username: '', password: '' })
+  const [adminLoading, setAdminLoading] = useState(false)
 
   useEffect(() => {
     fetchDashboardData()
@@ -206,6 +208,33 @@ function AdminDashboard({ onLogout }) {
       }
     } catch (err) {
       alert('Failed to add student')
+    }
+  }
+
+  const handleAddAdmin = async (e) => {
+    e.preventDefault()
+    setAdminLoading(true)
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`${API_URL}/api/admin/register`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newAdmin)
+      })
+      const data = await response.json()
+      if (response.ok) {
+        alert('Admin added successfully')
+        setNewAdmin({ username: '', password: '' })
+      } else {
+        alert(data.error || 'Failed to add admin')
+      }
+    } catch (err) {
+      alert('Failed to add admin')
+    } finally {
+      setAdminLoading(false)
     }
   }
 
@@ -714,6 +743,47 @@ function AdminDashboard({ onLogout }) {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Admin Management Section */}
+      <div className="card">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+          <UserPlus className="w-5 h-5 mr-2 text-primary-600" />
+          Manage Administrators
+        </h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Create additional administrator accounts to help manage the voting system.
+        </p>
+        <form onSubmit={handleAddAdmin} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <input
+              required
+              type="text"
+              placeholder="New Admin Username"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+              value={newAdmin.username}
+              onChange={e => setNewAdmin({...newAdmin, username: e.target.value})}
+            />
+          </div>
+          <div>
+            <input
+              required
+              type="password"
+              placeholder="New Admin Password"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+              value={newAdmin.password}
+              onChange={e => setNewAdmin({...newAdmin, password: e.target.value})}
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={adminLoading}
+            className="btn-primary flex items-center justify-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{adminLoading ? 'Creating...' : 'Create Admin Account'}</span>
+          </button>
+        </form>
       </div>
 
       {/* Danger Zone */}

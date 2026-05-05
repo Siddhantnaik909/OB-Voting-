@@ -424,4 +424,35 @@ router.post('/add-vote', authenticateToken, async (req, res) => {
   }
 });
 
+// POST /api/admin/register - Create a new admin account (Requires existing admin)
+router.post('/register', authenticateToken, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+    
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    
+    const existingAdmin = await Admin.findOne({ username });
+    if (existingAdmin) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+    
+    const newAdmin = new Admin({ username, password });
+    await newAdmin.save();
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'New administrator account created successfully' 
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ error: 'Failed to create admin account' });
+  }
+});
+
 module.exports = router;
