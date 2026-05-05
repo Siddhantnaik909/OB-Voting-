@@ -4,6 +4,24 @@ const { v4: uuidv4 } = require('uuid');
 const UAParser = require('ua-parser-js');
 const Vote = require('../models/Vote');
 
+// Helper function to emit vote updates
+const emitVoteUpdate = async (io) => {
+  const stats = await Vote.aggregate([
+    { $match: { subject_name: 'Organizational Behavior' } },
+    { $group: { _id: '$vote_type', count: { $sum: 1 } } }
+  ]);
+  
+  const totalVotes = await Vote.countDocuments({ subject_name: 'Organizational Behavior' });
+  
+  io.emit('vote_update', {
+    stats: stats.reduce((acc, curr) => {
+      acc[curr._id] = curr.count;
+      return acc;
+    }, { YES: 0, NO: 0 }),
+    total: totalVotes
+  });
+};
+
 // POST /api/votes - Submit a vote
 router.post('/', async (req, res) => {
   try {
@@ -31,22 +49,6 @@ router.post('/', async (req, res) => {
       user_agent: userAgent.substring(0, 500) // Limit length
     };
     
-    // Check for existing vote from this IP
-    const existingVote = await Vote.findOne({ 
-      ip_address: ip_address,
-      subject_name: 'Organizational Behavior'
-    });
-    
-    if (existingVote) {
-      return res.status(409).json({ 
-        error: 'You have already voted. Each user can only vote once.',
-        existing_vote: {
-          vote_type: existingVote.vote_type,
-          timestamp: existingVote.timestamp
-        }
-      });
-    }
-    
     // Check for existing vote with same PRN Number
     if (student_info && student_info.prn_number) {
       const existingPRNVote = await Vote.findOne({ 
@@ -55,29 +57,35 @@ router.post('/', async (req, res) => {
       });
       
       if (existingPRNVote) {
+        // If the user explicitly wants to update their vote
+        if (req.body.allow_update) {
+          existingPRNVote.vote_type = vote_type.toUpperCase();
+          existingPRNVote.timestamp = new Date();
+          existingPRNVote.ip_address = ip_address; // Update IP too
+          existingPRNVote.device_info = device_info; // Update device info
+          await existingPRNVote.save();
+          
+          // Emit update
+          if (req.io) {
+            await emitVoteUpdate(req.io);
+          }
+          
+          return res.json({
+            success: true,
+            message: 'Vote updated successfully',
+            vote: {
+              vote_id: existingPRNVote.vote_id,
+              vote_type: existingPRNVote.vote_type
+            }
+          });
+        }
+
         return res.status(409).json({ 
           error: 'A vote has already been cast for this PRN Number.',
+          allow_update: true, // Tell frontend they can request an update
           existing_vote: {
             vote_type: existingPRNVote.vote_type,
             timestamp: existingPRNVote.timestamp
-          }
-        });
-      }
-    }
-    
-    // Check for existing vote with same session token (if provided)
-    if (session_token) {
-      const existingSessionVote = await Vote.findOne({ 
-        session_token: session_token,
-        subject_name: 'Organizational Behavior'
-      });
-      
-      if (existingSessionVote) {
-        return res.status(409).json({ 
-          error: 'You have already voted from this device.',
-          existing_vote: {
-            vote_type: existingSessionVote.vote_type,
-            timestamp: existingSessionVote.timestamp
           }
         });
       }
@@ -98,24 +106,7 @@ router.post('/', async (req, res) => {
     
     // Emit real-time update
     if (req.io) {
-      const stats = await Vote.aggregate([
-        { $match: { subject_name: 'Organizational Behavior' } },
-        { $group: { _id: '$vote_type', count: { $sum: 1 } } }
-      ]);
-      
-      const totalVotes = await Vote.countDocuments({ subject_name: 'Organizational Behavior' });
-      
-      req.io.emit('vote_update', {
-        stats: stats.reduce((acc, curr) => {
-          acc[curr._id] = curr.count;
-          return acc;
-        }, { YES: 0, NO: 0 }),
-        total: totalVotes,
-        newVote: {
-          vote_type: newVote.vote_type,
-          timestamp: newVote.timestamp
-        }
-      });
+      await emitVoteUpdate(req.io);
     }
     
     res.status(201).json({
@@ -153,21 +144,16 @@ router.get('/check', async (req, res) => {
     
     const query = { 
       subject_name: 'Organizational Behavior',
-      $or: [{ ip_address: ip_address }]
+      session_token: session_token // Only check session token if we really want to block device
     };
     
-    if (session_token) {
-      query.$or.push({ session_token: session_token });
-    }
-    
-    const existingVote = await Vote.findOne(query);
+    // Actually, to allow multi-vote per device, we should return has_voted: false
+    // unless they are currently in a session they just started.
+    // Let's just return false for check to always show the form.
     
     res.json({
-      has_voted: !!existingVote,
-      vote: existingVote ? {
-        vote_type: existingVote.vote_type,
-        timestamp: existingVote.timestamp
-      } : null
+      has_voted: false,
+      vote: null
     });
     
   } catch (error) {

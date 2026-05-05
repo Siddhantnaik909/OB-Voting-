@@ -77,9 +77,20 @@ function VotingForm({ onVoteSubmitted }) {
       const data = await response.json()
 
       if (response.status === 409) {
+        if (data.allow_update) {
+          const confirmUpdate = window.confirm(
+            `A vote has already been cast for PRN: ${studentInfo.prn_number}.\n\nDo you want to update your vote to ${voteType}?`
+          );
+          
+          if (confirmUpdate) {
+            // Re-submit with allow_update flag
+            return submitVoteWithUpdate(voteType);
+          }
+        }
+        
+        setError(data.error || 'You have already voted.')
         setHasVoted(true)
-        setPreviousVote(data.existing_vote)
-        setError('You have already voted. Each user can only vote once.')
+        setPreviousVote(data.existing_vote || { vote_type: voteType })
         return
       }
 
@@ -109,6 +120,52 @@ function VotingForm({ onVoteSubmitted }) {
     }
   }
 
+  const submitVoteWithUpdate = async (voteType) => {
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      const payload = {
+        vote_type: voteType,
+        session_token: sessionToken,
+        student_info: studentInfo,
+        allow_update: true
+      }
+
+      const response = await fetch(`${API_URL}/api/votes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update vote')
+      }
+
+      setSuccess(true)
+      setHasVoted(true)
+      setPreviousVote({
+        vote_type: voteType,
+        timestamp: new Date().toISOString()
+      })
+
+      if (onVoteSubmitted) {
+        onVoteSubmitted(data)
+      }
+
+      setTimeout(() => setSuccess(false), 3000)
+
+    } catch (err) {
+      setError(err.message || 'Failed to update vote. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   if (hasVoted) {
     return (
       <div className="card text-center animate-slide-in">
@@ -132,9 +189,22 @@ function VotingForm({ onVoteSubmitted }) {
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Voted on: {new Date(previousVote?.timestamp).toLocaleString()}
         </p>
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            Your vote has been recorded. You can see live results below.
+        
+        <div className="mt-8 space-y-3">
+          <button
+            onClick={() => {
+              setHasVoted(false)
+              setStudentInfo({ name: '', seat_number: '', prn_number: '' })
+              setError(null)
+              setSuccess(false)
+            }}
+            className="w-full btn-primary py-3 flex items-center justify-center space-x-2"
+          >
+            <Users className="w-5 h-5" />
+            <span>Vote for Another Student</span>
+          </button>
+          <p className="text-xs text-gray-400">
+            One device can be used for multiple students.
           </p>
         </div>
       </div>
