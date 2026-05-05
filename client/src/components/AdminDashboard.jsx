@@ -187,9 +187,6 @@ function AdminDashboard({ onLogout }) {
     }
   }
 
-    }
-  }
-
   const handleDeleteVote = async (voteId) => {
     if (!window.confirm('Are you sure you want to delete this vote?')) return
     
