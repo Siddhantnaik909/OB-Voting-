@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, AlertCircle, Loader2, Lock } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { CheckCircle, XCircle, AlertCircle, Loader2, Lock, Users, BarChart3 } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -200,15 +201,19 @@ function VotingForm({ onVoteSubmitted }) {
           )}
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Thank You for Voting!
+          Vote Submitted Successfully!
         </h2>
         <p className="text-gray-600 dark:text-gray-300 mb-4">
-          You voted: <span className={`font-semibold ${
+          Your response for <span className="font-semibold">Organizational Behavior</span> has been recorded.
+        </p>
+        <div className="inline-flex items-center px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-full mb-6">
+          <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Your Choice:</span>
+          <span className={`font-bold ${
             previousVote?.vote_type === 'YES' ? 'text-yes-600' : 'text-no-600'
           }`}>
-            {previousVote?.vote_type === 'YES' ? 'YES' : 'NO'}
+            {previousVote?.vote_type === 'YES' ? 'YES (I can see it)' : 'NO (I cannot see it)'}
           </span>
-        </p>
+        </div>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Voted on: {new Date(previousVote?.timestamp).toLocaleString()}
         </p>
@@ -226,6 +231,15 @@ function VotingForm({ onVoteSubmitted }) {
             <Users className="w-5 h-5" />
             <span>Vote for Another Student</span>
           </button>
+          
+          <Link
+            to="/results"
+            className="w-full flex items-center justify-center space-x-2 py-3 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span>View Voting Results</span>
+          </Link>
+
           <p className="text-xs text-gray-400">
             One device can be used for multiple students.
           </p>
