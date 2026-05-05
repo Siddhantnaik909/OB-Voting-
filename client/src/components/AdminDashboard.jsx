@@ -43,7 +43,12 @@ function AdminDashboard({ onLogout }) {
   const [exportLoading, setExportLoading] = useState(false)
   const [resetConfirm, setResetConfirm] = useState(false)
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
-  const [settings, setSettings] = useState({ resultsPublic: false })
+  const [settings, setSettings] = useState({ 
+    resultsPublic: false, 
+    votingOpen: true, 
+    timerEnabled: false, 
+    deadline: null 
+  })
   const [seedLoading, setSeedLoading] = useState(false)
   const [isAddingStudent, setIsAddingStudent] = useState(false)
   const [newStudent, setNewStudent] = useState({ name: '', prn_number: '', seat_number: '', vote_type: 'YES' })
@@ -661,7 +666,16 @@ function AdminDashboard({ onLogout }) {
                     <input
                       type="datetime-local"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-                      value={settings.deadline ? new Date(new Date(settings.deadline).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
+                      value={(() => {
+                        try {
+                          if (!settings.deadline) return '';
+                          const d = new Date(settings.deadline);
+                          if (isNaN(d.getTime())) return '';
+                          return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                        } catch (e) {
+                          return '';
+                        }
+                      })()}
                       onChange={(e) => handleUpdateSettings({ deadline: e.target.value })}
                     />
                   </div>
