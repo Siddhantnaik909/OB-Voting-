@@ -23,13 +23,8 @@ import {
   Shield,
   Activity,
   LayoutDashboard,
-  ChevronRight
-  EyeOff,
-  UserPlus,
-  Database,
-  Plus,
-  Lock,
-  Unlock
+  ChevronRight,
+  Plus
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts'
 
