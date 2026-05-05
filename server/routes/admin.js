@@ -4,6 +4,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const Vote = require('../models/Vote');
 const Admin = require('../models/Admin');
+const Settings = require('../models/Settings');
+const { v4: uuidv4 } = require('uuid');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRES = '24h';
@@ -282,6 +284,116 @@ router.post('/change-password', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Change password error:', error);
     res.status(500).json({ error: 'Failed to change password' });
+  }
+});
+
+// GET /api/admin/settings - Get settings
+router.get('/settings', authenticateToken, async (req, res) => {
+  try {
+    let settings = await Settings.findOne({ subject: 'Organizational Behavior' });
+    if (!settings) {
+      settings = new Settings({ subject: 'Organizational Behavior' });
+      await settings.save();
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+// POST /api/admin/settings - Update settings
+router.post('/settings', authenticateToken, async (req, res) => {
+  try {
+    const { resultsPublic } = req.body;
+    let settings = await Settings.findOneAndUpdate(
+      { subject: 'Organizational Behavior' },
+      { resultsPublic },
+      { new: true, upsert: true }
+    );
+    
+    if (req.io) {
+      req.io.emit('settings_updated', settings);
+    }
+    
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// POST /api/admin/seed - Seed fake data
+router.post('/seed', authenticateToken, async (req, res) => {
+  try {
+    const { count = 10 } = req.body;
+    const fakeVotes = [];
+    const names = ['Rahul Sharma', 'Sneha Patil', 'Amit Verma', 'Priya Singh', 'Vikram Das', 'Anjali Gupta', 'Karan Mehta', 'Deepa Nair', 'Rohan Joshi', 'Meera Iyer'];
+    const votes = ['YES', 'NO'];
+    
+    for (let i = 0; i < count; i++) {
+      const prn = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+      fakeVotes.push({
+        vote_id: uuidv4(),
+        subject_name: 'Organizational Behavior',
+        vote_type: votes[Math.floor(Math.random() * votes.length)],
+        ip_address: `192.168.1.${Math.floor(Math.random() * 255)}`,
+        device_info: {
+          browser: 'Chrome',
+          os: 'Windows',
+          device: 'Desktop'
+        },
+        student_info: {
+          name: names[Math.floor(Math.random() * names.length)],
+          prn_number: prn,
+          seat_number: `S${Math.floor(100 + Math.random() * 900)}`
+        }
+      });
+    }
+    
+    await Vote.insertMany(fakeVotes);
+    
+    if (req.io) {
+      req.io.emit('votes_updated');
+    }
+    
+    res.json({ success: true, message: `Successfully seeded ${count} fake votes` });
+  } catch (error) {
+    console.error('Seed error:', error);
+    res.status(500).json({ error: 'Failed to seed data' });
+  }
+});
+
+// POST /api/admin/add-vote - Add a student manually
+router.post('/add-vote', authenticateToken, async (req, res) => {
+  try {
+    const { name, prn_number, seat_number, vote_type } = req.body;
+    
+    const newVote = new Vote({
+      vote_id: uuidv4(),
+      subject_name: 'Organizational Behavior',
+      vote_type,
+      ip_address: 'ADMIN_MANUAL',
+      device_info: {
+        browser: 'Admin Panel',
+        os: 'AdminPanel',
+        device: 'Admin'
+      },
+      student_info: {
+        name,
+        prn_number,
+        seat_number
+      }
+    });
+    
+    await newVote.save();
+    
+    if (req.io) {
+      req.io.emit('votes_updated');
+    }
+    
+    res.json({ success: true, message: 'Student vote added successfully' });
+  } catch (error) {
+    console.error('Add vote error:', error);
+    res.status(500).json({ error: 'Failed to add student vote' });
   }
 });
 

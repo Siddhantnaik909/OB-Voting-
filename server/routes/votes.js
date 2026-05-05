@@ -3,6 +3,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const UAParser = require('ua-parser-js');
 const Vote = require('../models/Vote');
+const Settings = require('../models/Settings');
 
 // Helper function to emit vote updates
 const emitVoteUpdate = async (io) => {
@@ -159,6 +160,40 @@ router.get('/check', async (req, res) => {
   } catch (error) {
     console.error('Vote check error:', error);
     res.status(500).json({ error: 'Failed to check vote status' });
+  }
+});
+
+// GET /api/votes/results - Get public results if allowed
+router.get('/results', async (req, res) => {
+  try {
+    const settings = await Settings.findOne({ subject: 'Organizational Behavior' });
+    
+    if (!settings || !settings.resultsPublic) {
+      return res.status(403).json({ 
+        isPublic: false,
+        message: 'Results are not public yet. Please wait for admin to publish.' 
+      });
+    }
+    
+    const votes = await Vote.find({ subject_name: 'Organizational Behavior' })
+      .sort({ timestamp: -1 })
+      .select('student_info.name student_info.prn_number vote_type timestamp');
+    
+    // Format for easier use on frontend
+    const formattedVotes = votes.map(v => ({
+      name: v.student_info?.name || 'Anonymous',
+      prn: v.student_info?.prn_number || 'N/A',
+      vote: v.vote_type,
+      time: v.timestamp
+    }));
+    
+    res.json({
+      isPublic: true,
+      votes: formattedVotes
+    });
+  } catch (error) {
+    console.error('Fetch results error:', error);
+    res.status(500).json({ error: 'Failed to fetch results' });
   }
 });
 

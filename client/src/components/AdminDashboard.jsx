@@ -11,7 +11,12 @@ import {
   BarChart3,
   PieChart,
   Trash2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Eye,
+  EyeOff,
+  UserPlus,
+  Database,
+  Plus
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts'
 
@@ -30,24 +35,48 @@ function AdminDashboard({ onLogout }) {
   const [exportLoading, setExportLoading] = useState(false)
   const [resetConfirm, setResetConfirm] = useState(false)
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
+  const [settings, setSettings] = useState({ resultsPublic: false })
+  const [seedLoading, setSeedLoading] = useState(false)
+  const [isAddingStudent, setIsAddingStudent] = useState(false)
+  const [newStudent, setNewStudent] = useState({ name: '', prn_number: '', seat_number: '', vote_type: 'YES' })
 
   useEffect(() => {
     fetchDashboardData()
+    fetchSettings()
 
-    // Socket.io connection
-    const newSocket = io(API_URL)
+    // Socket.io connection with improved configuration
+    const newSocket = io(API_URL, {
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    })
     
-    newSocket.on('vote_update', () => {
+    newSocket.on('connect', () => {
+      console.log('Admin Socket connected successfully')
+    })
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Admin Socket connection error:', error)
+    })
+
+    newSocket.on('vote_update', (data) => {
+      console.log('Received live vote update:', data)
       fetchDashboardData()
     })
 
     newSocket.on('votes_reset', () => {
+      console.log('Votes reset event received')
       fetchDashboardData()
+    })
+
+    newSocket.on('settings_updated', (data) => {
+      setSettings(data)
     })
 
     setSocket(newSocket)
 
     return () => {
+      console.log('Closing socket connection')
       newSocket.close()
     }
   }, [])
@@ -74,6 +103,87 @@ function AdminDashboard({ onLogout }) {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchSettings = async () => {
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`${API_URL}/api/admin/settings`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSettings(data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch settings:', err)
+    }
+  }
+
+  const togglePublicResults = async () => {
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`${API_URL}/api/admin/settings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ resultsPublic: !settings.resultsPublic })
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSettings(data)
+      }
+    } catch (err) {
+      alert('Failed to update settings')
+    }
+  }
+
+  const handleSeedData = async () => {
+    setSeedLoading(true)
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`${API_URL}/api/admin/seed`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ count: 10 })
+      })
+      if (response.ok) {
+        alert('Successfully seeded 10 fake votes')
+        fetchDashboardData()
+      }
+    } catch (err) {
+      alert('Failed to seed data')
+    } finally {
+      setSeedLoading(false)
+    }
+  }
+
+  const handleAddStudent = async (e) => {
+    e.preventDefault()
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`${API_URL}/api/admin/add-vote`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newStudent)
+      })
+      if (response.ok) {
+        alert('Student added successfully')
+        setIsAddingStudent(false)
+        setNewStudent({ name: '', prn_number: '', seat_number: '', vote_type: 'YES' })
+        fetchDashboardData()
+      }
+    } catch (err) {
+      alert('Failed to add student')
     }
   }
 
@@ -188,6 +298,18 @@ function AdminDashboard({ onLogout }) {
         </div>
         <div className="flex items-center space-x-2">
           <button
+            onClick={togglePublicResults}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              settings.resultsPublic 
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 hover:bg-green-200' 
+                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200'
+            }`}
+            title={settings.resultsPublic ? "Results are Public" : "Results are Private"}
+          >
+            {settings.resultsPublic ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            <span className="hidden sm:inline">{settings.resultsPublic ? 'Results Public' : 'Make Public'}</span>
+          </button>
+          <button
             onClick={fetchDashboardData}
             className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 
                      hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
@@ -201,7 +323,7 @@ function AdminDashboard({ onLogout }) {
                      text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            <span>Logout</span>
+            <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </div>
@@ -360,6 +482,103 @@ function AdminDashboard({ onLogout }) {
             <Download className="w-4 h-4" />
             <span>Download CSV</span>
           </button>
+        </div>
+      </div>
+
+      {/* Admin Actions */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+            <UserPlus className="w-5 h-5 mr-2" />
+            Quick Add Student
+          </h3>
+          <form onSubmit={handleAddStudent} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Student Name"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                  value={newStudent.name}
+                  onChange={e => setNewStudent({...newStudent, name: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">PRN</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="PRN Number"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                  value={newStudent.prn_number}
+                  onChange={e => setNewStudent({...newStudent, prn_number: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Seat No.</label>
+                <input
+                  type="text"
+                  placeholder="Seat Number"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                  value={newStudent.seat_number}
+                  onChange={e => setNewStudent({...newStudent, seat_number: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vote</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                  value={newStudent.vote_type}
+                  onChange={e => setNewStudent({...newStudent, vote_type: e.target.value})}
+                >
+                  <option value="YES">YES</option>
+                  <option value="NO">NO</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" className="w-full btn-primary flex items-center justify-center space-x-2">
+              <Plus className="w-4 h-4" />
+              <span>Add Student Vote</span>
+            </button>
+          </form>
+        </div>
+
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+            <Database className="w-5 h-5 mr-2" />
+            Data Management
+          </h3>
+          <p className="text-sm text-gray-500 mb-6">
+            Use these controls to manage your dataset for testing or clearing.
+          </p>
+          <div className="space-y-4">
+            <button
+              onClick={handleSeedData}
+              disabled={seedLoading}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors"
+            >
+              <Database className="w-4 h-4" />
+              <span>{seedLoading ? 'Seeding...' : 'Seed 10 Fake Details'}</span>
+            </button>
+            <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+              <p className="text-xs text-gray-400 mb-2 uppercase font-bold">Public View</p>
+              <button
+                onClick={togglePublicResults}
+                className={`w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                  settings.resultsPublic 
+                    ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                    : 'bg-green-50 text-green-600 hover:bg-green-100'
+                }`}
+              >
+                {settings.resultsPublic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <span>{settings.resultsPublic ? 'Unpublish Results' : 'Publish Results to Students'}</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

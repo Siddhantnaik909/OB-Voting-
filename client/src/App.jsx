@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import VotingPage from './pages/VotingPage'
 import AdminPage from './pages/AdminPage'
+import ResultsPage from './pages/ResultsPage'
 import Navbar from './components/Navbar'
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
       <main className="container mx-auto px-4 py-8">
         <Routes>
           <Route path="/" element={<VotingPage />} />
+          <Route path="/results" element={<ResultsPage />} />
           <Route path="/admin/*" element={<AdminPage />} />
         </Routes>
       </main>
