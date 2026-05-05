@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { CheckCircle, XCircle, AlertCircle, Loader2, Lock } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -17,6 +17,7 @@ function VotingForm({ onVoteSubmitted }) {
     seat_number: '',
     prn_number: ''
   })
+  const [votingOpen, setVotingOpen] = useState(true)
 
   useEffect(() => {
     // Get or create session token
@@ -38,6 +39,7 @@ function VotingForm({ onVoteSubmitted }) {
       )
       if (response.ok) {
         const data = await response.json()
+        setVotingOpen(data.votingOpen)
         if (data.has_voted) {
           setHasVoted(true)
           setPreviousVote(data.vote)
@@ -164,6 +166,27 @@ function VotingForm({ onVoteSubmitted }) {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (!votingOpen) {
+    return (
+      <div className="card text-center animate-slide-in border-t-4 border-amber-500">
+        <div className="mb-6 w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto">
+          <Lock className="w-10 h-10 text-amber-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Voting is Closed
+        </h2>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
+          The administrator has closed the voting for this subject. If you haven't voted yet and believe this is an error, please contact your department.
+        </p>
+        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <p className="text-sm text-gray-500 italic">
+            "Only the administrator can make changes at this time."
+          </p>
+        </div>
+      </div>
+    )
   }
 
   if (hasVoted) {

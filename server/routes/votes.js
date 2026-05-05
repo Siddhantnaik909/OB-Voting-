@@ -29,6 +29,12 @@ router.post('/', async (req, res) => {
     const { vote_type, session_token, student_info } = req.body;
     const userAgent = req.headers['user-agent'] || '';
     
+    // Check if voting is open
+    const settings = await Settings.findOne({ subject: 'Organizational Behavior' });
+    if (settings && !settings.votingOpen) {
+      return res.status(403).json({ error: 'Voting is currently closed by the administrator.' });
+    }
+    
     // Validation
     if (!vote_type || !['YES', 'NO'].includes(vote_type.toUpperCase())) {
       return res.status(400).json({ error: 'Invalid vote type. Must be YES or NO.' });
@@ -152,9 +158,12 @@ router.get('/check', async (req, res) => {
     // unless they are currently in a session they just started.
     // Let's just return false for check to always show the form.
     
+    const settings = await Settings.findOne({ subject: 'Organizational Behavior' });
+    
     res.json({
       has_voted: false,
-      vote: null
+      vote: null,
+      votingOpen: settings ? settings.votingOpen : true
     });
     
   } catch (error) {

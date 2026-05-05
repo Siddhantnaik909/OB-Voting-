@@ -5,6 +5,10 @@ const settingsSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  votingOpen: {
+    type: Boolean,
+    default: true
+  },
   subject: {
     type: String,
     default: 'Organizational Behavior',

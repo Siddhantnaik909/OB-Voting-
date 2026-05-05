@@ -16,7 +16,9 @@ import {
   EyeOff,
   UserPlus,
   Database,
-  Plus
+  Plus,
+  Lock,
+  Unlock
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts'
 
@@ -118,6 +120,26 @@ function AdminDashboard({ onLogout }) {
       }
     } catch (err) {
       console.error('Failed to fetch settings:', err)
+    }
+  }
+
+  const toggleVotingStatus = async () => {
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`${API_URL}/api/admin/settings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ votingOpen: !settings.votingOpen })
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSettings(data)
+      }
+    } catch (err) {
+      alert('Failed to update voting status')
     }
   }
 
@@ -587,6 +609,19 @@ function AdminDashboard({ onLogout }) {
               <span>{seedLoading ? 'Seeding...' : 'Seed 10 Fake Details'}</span>
             </button>
             <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+              <p className="text-xs text-gray-400 mb-2 uppercase font-bold">Voting Controls</p>
+              <button
+                onClick={toggleVotingStatus}
+                className={`w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors mb-3 ${
+                  settings.votingOpen 
+                    ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' 
+                    : 'bg-green-50 text-green-600 hover:bg-green-100'
+                }`}
+              >
+                {settings.votingOpen ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                <span>{settings.votingOpen ? 'Close Voting for Students' : 'Open Voting for Students'}</span>
+              </button>
+              
               <p className="text-xs text-gray-400 mb-2 uppercase font-bold">Public View</p>
               <button
                 onClick={togglePublicResults}
