@@ -151,7 +151,7 @@ function AdminDashboard({ onLogout }) {
     }
   }
 
-  const togglePublicResults = async () => {
+  const handleUpdateSettings = async (updateData) => {
     try {
       const token = localStorage.getItem('admin_token')
       const response = await fetch(`${API_URL}/api/admin/settings`, {
@@ -160,7 +160,7 @@ function AdminDashboard({ onLogout }) {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ resultsPublic: !settings.resultsPublic })
+        body: JSON.stringify(updateData)
       })
       if (response.ok) {
         const data = await response.json()
@@ -170,6 +170,9 @@ function AdminDashboard({ onLogout }) {
       alert('Failed to update settings')
     }
   }
+
+  const toggleVoting = () => handleUpdateSettings({ votingOpen: !settings.votingOpen })
+  const togglePublicResults = () => handleUpdateSettings({ resultsPublic: !settings.resultsPublic })
 
   const handleSeedData = async () => {
     setSeedLoading(true)
