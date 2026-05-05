@@ -46,8 +46,8 @@ const voteSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compound index to prevent duplicate votes from same IP
-voteSchema.index({ ip_address: 1, subject_name: 1 }, { unique: true });
+// Index for IP address (not unique to allow multiple students on same network)
+voteSchema.index({ ip_address: 1, subject_name: 1 });
 
 // Index for quick stats queries
 voteSchema.index({ vote_type: 1, timestamp: 1 });

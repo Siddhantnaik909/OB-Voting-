@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle, XCircle, AlertCircle, Loader2, Lock, Users, BarChart3 } from 'lucide-react'
+import { CheckCircle, XCircle, AlertCircle, Loader2, Lock, Users, BarChart3, RefreshCw } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -19,6 +19,8 @@ function VotingForm({ onVoteSubmitted }) {
     prn_number: ''
   })
   const [votingOpen, setVotingOpen] = useState(true)
+  const [showUpdateModal, setShowUpdateModal] = useState(false)
+  const [pendingVoteType, setPendingVoteType] = useState(null)
 
   useEffect(() => {
     // Get or create session token
@@ -81,14 +83,10 @@ function VotingForm({ onVoteSubmitted }) {
 
       if (response.status === 409) {
         if (data.allow_update) {
-          const confirmUpdate = window.confirm(
-            `A vote has already been cast for PRN: ${studentInfo.prn_number}.\n\nDo you want to update your vote to ${voteType}?`
-          );
-          
-          if (confirmUpdate) {
-            // Re-submit with allow_update flag
-            return submitVoteWithUpdate(voteType);
-          }
+          setPendingVoteType(voteType)
+          setShowUpdateModal(true)
+          setIsSubmitting(false)
+          return
         }
         
         setError(data.error || 'You have already voted.')
@@ -150,6 +148,7 @@ function VotingForm({ onVoteSubmitted }) {
       }
 
       setSuccess(true)
+      setShowUpdateModal(false)
       setHasVoted(true)
       setPreviousVote({
         vote_type: voteType,
@@ -379,6 +378,42 @@ function VotingForm({ onVoteSubmitted }) {
         Note: You can only vote once. Your IP address and device information will be recorded 
         to prevent duplicate voting.
       </p>
+
+      {/* Update Confirmation Modal */}
+      {showUpdateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-300 border border-white/20">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                <RefreshCw className="w-8 h-8 text-primary-600 animate-spin-slow" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Update your vote?</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-8">
+                A vote already exists for <span className="font-bold text-gray-900 dark:text-white">PRN: {studentInfo.prn_number}</span>. 
+                Do you want to change your answer to <span className="font-bold text-primary-600">{pendingVoteType}</span>?
+              </p>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={() => submitVoteWithUpdate(pendingVoteType)}
+                  className="w-full py-4 bg-primary-600 text-white font-bold rounded-2xl hover:bg-primary-700 shadow-lg shadow-primary-600/20 active:scale-95 transition-all"
+                >
+                  Yes, Update my vote
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUpdateModal(false)
+                    setError('Vote not updated. A record already exists for this PRN.')
+                  }}
+                  className="w-full py-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

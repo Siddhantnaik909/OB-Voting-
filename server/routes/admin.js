@@ -398,7 +398,7 @@ router.post('/add-vote', authenticateToken, async (req, res) => {
       vote_id: uuidv4(),
       subject_name: 'Organizational Behavior',
       vote_type,
-      ip_address: 'ADMIN_MANUAL',
+      ip_address: `ADMIN_MANUAL_${uuidv4()}`,
       device_info: {
         browser: 'Admin Panel',
         os: 'AdminPanel',
@@ -414,7 +414,20 @@ router.post('/add-vote', authenticateToken, async (req, res) => {
     await newVote.save();
     
     if (req.io) {
-      req.io.emit('votes_updated');
+      // Fetch updated stats to send a full update like the student route does
+      const stats = await Vote.aggregate([
+        { $match: { subject_name: 'Organizational Behavior' } },
+        { $group: { _id: '$vote_type', count: { $sum: 1 } } }
+      ]);
+      const totalVotes = await Vote.countDocuments({ subject_name: 'Organizational Behavior' });
+      
+      req.io.emit('vote_update', {
+        stats: stats.reduce((acc, curr) => {
+          acc[curr._id] = curr.count;
+          return acc;
+        }, { YES: 0, NO: 0 }),
+        total: totalVotes
+      });
     }
     
     res.json({ success: true, message: 'Student vote added successfully' });
