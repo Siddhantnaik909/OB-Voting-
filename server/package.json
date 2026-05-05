@@ -18,7 +18,8 @@
     "socket.io": "^4.7.4",
     "xlsx": "^0.18.5",
     "ua-parser-js": "^1.0.37",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "axios": "^1.6.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

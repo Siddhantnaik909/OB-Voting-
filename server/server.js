@@ -5,6 +5,8 @@ const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
+const axios = require('axios');
 
 dotenv.config();
 
@@ -65,6 +67,18 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/export', require('./routes/export'));
 app.use('/api/stats', require('./routes/stats'));
 
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
@@ -88,4 +102,15 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  
+  // Self-ping mechanism to keep Render instance alive
+  const PING_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
+  setInterval(async () => {
+    try {
+      await axios.get(`${PING_URL}/health`);
+      console.log('Self-ping successful');
+    } catch (error) {
+      console.error('Self-ping failed:', error.message);
+    }
+  }, 14 * 60 * 1000); // Ping every 14 minutes (Render sleep timeout is ~15-30 mins)
 });
