@@ -187,6 +187,31 @@ function AdminDashboard({ onLogout }) {
     }
   }
 
+    }
+  }
+
+  const handleDeleteVote = async (voteId) => {
+    if (!window.confirm('Are you sure you want to delete this vote?')) return
+    
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`${API_URL}/api/admin/votes/${voteId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      if (response.ok) {
+        fetchDashboardData()
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to delete vote')
+      }
+    } catch (err) {
+      alert('Failed to delete vote')
+    }
+  }
+
   const handleExport = async (format = 'xlsx') => {
     setExportLoading(true)
     try {
@@ -596,6 +621,7 @@ function AdminDashboard({ onLogout }) {
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Vote</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Time</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">IP Address</th>
+                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -634,6 +660,15 @@ function AdminDashboard({ onLogout }) {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {vote.ip_address}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => handleDeleteVote(vote.vote_id)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        title="Delete vote"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))

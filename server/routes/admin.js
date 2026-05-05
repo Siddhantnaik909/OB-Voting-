@@ -287,6 +287,29 @@ router.post('/change-password', authenticateToken, async (req, res) => {
   }
 });
 
+// DELETE /api/admin/votes/:vote_id - Delete a specific vote
+router.delete('/votes/:vote_id', authenticateToken, async (req, res) => {
+  try {
+    const { vote_id } = req.params;
+    
+    const result = await Vote.findOneAndDelete({ vote_id });
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Vote not found' });
+    }
+    
+    // Emit update event
+    if (req.io) {
+      req.io.emit('votes_updated');
+    }
+    
+    res.json({ success: true, message: 'Vote deleted successfully' });
+  } catch (error) {
+    console.error('Delete vote error:', error);
+    res.status(500).json({ error: 'Failed to delete vote' });
+  }
+});
+
 // GET /api/admin/settings - Get settings
 router.get('/settings', authenticateToken, async (req, res) => {
   try {
