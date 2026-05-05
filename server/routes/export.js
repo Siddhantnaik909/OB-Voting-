@@ -53,15 +53,15 @@ router.get('/excel', authenticateToken, async (req, res) => {
       'Vote ID': vote.vote_id,
       'Subject Name': vote.subject_name,
       'Vote Type': vote.vote_type,
-      'Timestamp': vote.timestamp.toISOString(),
-      'Date': vote.timestamp.toLocaleDateString('en-IN'),
-      'Time': vote.timestamp.toLocaleTimeString('en-IN'),
-      'IP Address': vote.ip_address,
+      'Timestamp': vote.timestamp ? vote.timestamp.toISOString() : '',
+      'Date': vote.timestamp ? vote.timestamp.toLocaleDateString('en-IN') : '',
+      'Time': vote.timestamp ? vote.timestamp.toLocaleTimeString('en-IN') : '',
+      'IP Address': vote.ip_address || '',
       'Browser': vote.device_info?.browser || 'Unknown',
       'Operating System': vote.device_info?.os || 'Unknown',
       'Device': vote.device_info?.device || 'Unknown',
       'Student Name': vote.student_info?.name || '',
-      'Seat Number': vote.student_info?.seat_number || '',
+      'Seat Number': vote.student_info?.seat_number || vote.student_info?.student_id || '',
       'PRN Number': vote.student_info?.prn_number || ''
     }));
     
@@ -157,12 +157,12 @@ router.get('/csv', authenticateToken, async (req, res) => {
       'Vote ID': vote.vote_id,
       'Subject Name': vote.subject_name,
       'Vote Type': vote.vote_type,
-      'Timestamp': vote.timestamp.toISOString(),
-      'IP Address': vote.ip_address,
+      'Timestamp': vote.timestamp ? vote.timestamp.toISOString() : '',
+      'IP Address': vote.ip_address || '',
       'Browser': vote.device_info?.browser || 'Unknown',
       'OS': vote.device_info?.os || 'Unknown',
       'Student Name': vote.student_info?.name || '',
-      'Seat Number': vote.student_info?.seat_number || '',
+      'Seat Number': vote.student_info?.seat_number || vote.student_info?.student_id || '',
       'PRN Number': vote.student_info?.prn_number || ''
     }));
     
