@@ -31,8 +31,15 @@ router.post('/', async (req, res) => {
     
     // Check if voting is open
     const settings = await Settings.findOne({ subject: 'Organizational Behavior' });
-    if (settings && !settings.votingOpen) {
-      return res.status(403).json({ error: 'Voting is currently closed by the administrator.' });
+    if (settings) {
+      if (!settings.votingOpen) {
+        return res.status(403).json({ error: 'Voting is currently closed by the administrator.' });
+      }
+      
+      // Check deadline
+      if (settings.timerEnabled && settings.deadline && new Date() > new Date(settings.deadline)) {
+        return res.status(403).json({ error: 'Voting has ended for this subject.' });
+      }
     }
     
     // Validation
@@ -163,7 +170,9 @@ router.get('/check', async (req, res) => {
     res.json({
       has_voted: false,
       vote: null,
-      votingOpen: settings ? settings.votingOpen : true
+      votingOpen: settings ? settings.votingOpen : true,
+      deadline: settings ? settings.deadline : null,
+      timerEnabled: settings ? settings.timerEnabled : false
     });
     
   } catch (error) {

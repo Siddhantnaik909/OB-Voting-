@@ -327,10 +327,12 @@ router.get('/settings', authenticateToken, async (req, res) => {
 // POST /api/admin/settings - Update settings
 router.post('/settings', authenticateToken, async (req, res) => {
   try {
-    const { resultsPublic, votingOpen } = req.body;
+    const { resultsPublic, votingOpen, deadline, timerEnabled } = req.body;
     const updateData = {};
     if (resultsPublic !== undefined) updateData.resultsPublic = resultsPublic;
     if (votingOpen !== undefined) updateData.votingOpen = votingOpen;
+    if (deadline !== undefined) updateData.deadline = deadline;
+    if (timerEnabled !== undefined) updateData.timerEnabled = timerEnabled;
 
     let settings = await Settings.findOneAndUpdate(
       { subject: 'Organizational Behavior' },

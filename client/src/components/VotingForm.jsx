@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle, XCircle, AlertCircle, Loader2, Lock, Users, BarChart3, RefreshCw } from 'lucide-react'
+import { CheckCircle, XCircle, AlertCircle, Loader2, Lock, Users, BarChart3, RefreshCw, Clock } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -21,6 +21,9 @@ function VotingForm({ onVoteSubmitted }) {
   const [votingOpen, setVotingOpen] = useState(true)
   const [showUpdateModal, setShowUpdateModal] = useState(false)
   const [pendingVoteType, setPendingVoteType] = useState(null)
+  const [deadline, setDeadline] = useState(null)
+  const [timerEnabled, setTimerEnabled] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState(null)
 
   useEffect(() => {
     // Get or create session token
@@ -43,6 +46,9 @@ function VotingForm({ onVoteSubmitted }) {
       if (response.ok) {
         const data = await response.json()
         setVotingOpen(data.votingOpen)
+        setDeadline(data.deadline)
+        setTimerEnabled(data.timerEnabled)
+        
         if (data.has_voted) {
           setHasVoted(true)
           setPreviousVote(data.vote)
@@ -52,6 +58,28 @@ function VotingForm({ onVoteSubmitted }) {
       console.error('Error checking vote status:', err)
     }
   }
+
+  useEffect(() => {
+    if (!timerEnabled || !deadline) return
+
+    const timer = setInterval(() => {
+      const now = new Date().getTime()
+      const end = new Date(deadline).getTime()
+      const distance = end - now
+
+      if (distance < 0) {
+        clearInterval(timer)
+        setTimeRemaining('Voting Ended')
+        setVotingOpen(false)
+      } else {
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000)
+        setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`)
+      }
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [timerEnabled, deadline])
 
   const submitVote = async (voteType) => {
     setIsSubmitting(true)
@@ -259,9 +287,18 @@ function VotingForm({ onVoteSubmitted }) {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
           Organizational Behavior Exam
         </h1>
-        <p className="text-lg text-gray-700 dark:text-gray-300">
+        <p className="text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
           Are you able to see your <span className="font-semibold text-primary-600">'Organizational Behavior'</span> exam subject?
         </p>
+
+        {timerEnabled && timeRemaining && (
+          <div className="mt-6 inline-flex items-center space-x-3 px-6 py-2 bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-900/30 rounded-full animate-pulse">
+            <Clock className="w-5 h-5 text-primary-600" />
+            <span className="text-lg font-mono font-bold text-primary-700 dark:text-primary-400">
+              {timeRemaining}
+            </span>
+          </div>
+        )}
       </div>
 
       {error && (

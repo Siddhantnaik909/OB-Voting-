@@ -46,7 +46,20 @@ app.use(generalLimiter);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ob-voting')
-  .then(() => console.log('Connected to MongoDB'))
+  .then(async () => {
+    console.log('Connected to MongoDB');
+    // Fix: Drop unique IP index if it exists (critical for college WiFi environments)
+    try {
+      const db = mongoose.connection.db;
+      const collections = await db.listCollections({ name: 'votes' }).toArray();
+      if (collections.length > 0) {
+        await db.collection('votes').dropIndex('ip_address_1_subject_name_1').catch(() => {});
+        console.log('Database index repaired: Unique IP constraint removed.');
+      }
+    } catch (err) {
+      console.error('Index repair skipped or failed:', err.message);
+    }
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Socket.io setup

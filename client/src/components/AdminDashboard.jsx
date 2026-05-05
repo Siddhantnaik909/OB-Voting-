@@ -14,6 +14,17 @@ import {
   FileSpreadsheet,
   Eye,
   EyeOff,
+  Lock,
+  Unlock,
+  Settings as SettingsIcon,
+  Database,
+  UserPlus,
+  Clock,
+  Shield,
+  Activity,
+  LayoutDashboard,
+  ChevronRight
+  EyeOff,
   UserPlus,
   Database,
   Plus,
@@ -620,11 +631,84 @@ function AdminDashboard({ onLogout }) {
           </form>
         </div>
 
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <Database className="w-5 h-5 mr-2" />
-            Data Management
-          </h3>
+            {/* Voting Timer Section */}
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <Clock className="w-5 h-5 mr-2" />
+                Voting Timer
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Enable Timer</p>
+                    <p className="text-xs text-gray-500">Automatically close voting</p>
+                  </div>
+                  <button
+                    onClick={() => handleUpdateSettings({ timerEnabled: !settings.timerEnabled })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      settings.timerEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      settings.timerEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+
+                {settings.timerEnabled && (
+                  <div className="animate-in slide-in-from-top-2 duration-300">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Set Deadline
+                    </label>
+                    <input
+                      type="datetime-local"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                      value={settings.deadline ? new Date(new Date(settings.deadline).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => handleUpdateSettings({ deadline: e.target.value })}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* System Controls */}
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <SettingsIcon className="w-5 h-5 mr-2" />
+                System Settings
+              </h3>
+              <div className="space-y-4">
+                <button
+                  onClick={toggleVoting}
+                  className={`w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                    settings.votingOpen 
+                      ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                      : 'bg-green-50 text-green-600 hover:bg-green-100'
+                  }`}
+                >
+                  {settings.votingOpen ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                  <span>{settings.votingOpen ? 'Close Voting' : 'Open Voting'}</span>
+                </button>
+                
+                <button
+                  onClick={togglePublicResults}
+                  className={`w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                    settings.resultsPublic 
+                      ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                      : 'bg-green-50 text-green-600 hover:bg-green-100'
+                  }`}
+                >
+                  {settings.resultsPublic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  <span>{settings.resultsPublic ? 'Unpublish Results' : 'Publish Results'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <Database className="w-5 h-5 mr-2" />
+                Data Management
+              </h3>
           <p className="text-sm text-gray-500 mb-6">
             Use these controls to manage your dataset for testing or clearing.
           </p>

@@ -9,6 +9,14 @@ const settingsSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  deadline: {
+    type: Date,
+    default: null
+  },
+  timerEnabled: {
+    type: Boolean,
+    default: false
+  },
   subject: {
     type: String,
     default: 'Organizational Behavior',
