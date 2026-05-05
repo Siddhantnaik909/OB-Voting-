@@ -47,6 +47,24 @@ router.post('/', async (req, res) => {
       });
     }
     
+    // Check for existing vote with same PRN Number
+    if (student_info && student_info.prn_number) {
+      const existingPRNVote = await Vote.findOne({ 
+        'student_info.prn_number': student_info.prn_number,
+        subject_name: 'Organizational Behavior'
+      });
+      
+      if (existingPRNVote) {
+        return res.status(409).json({ 
+          error: 'A vote has already been cast for this PRN Number.',
+          existing_vote: {
+            vote_type: existingPRNVote.vote_type,
+            timestamp: existingPRNVote.timestamp
+          }
+        });
+      }
+    }
+    
     // Check for existing vote with same session token (if provided)
     if (session_token) {
       const existingSessionVote = await Vote.findOne({ 

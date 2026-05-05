@@ -153,10 +153,10 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       return acc;
     }, { YES: 0, NO: 0 });
     
-    // Get most recent 10 votes
+    // Get most recent 100 votes
     const recentVotesList = await Vote.find({ subject_name: 'Organizational Behavior' })
       .sort({ timestamp: -1 })
-      .limit(10)
+      .limit(100)
       .select('vote_id vote_type timestamp student_info ip_address');
     
     res.json({
